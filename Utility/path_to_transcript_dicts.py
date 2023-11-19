@@ -22,13 +22,13 @@ def build_path_to_transcript_dict_mls_italian():
 
 def build_path_to_transcript_dict_mls_french():
     lang = "french"
-    root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
-def build_path_to_transcript_dict_mls_dutch():
-    lang = "dutch"
-    root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
+def build_path_to_transcript_dict_mls_german():
+    lang = "german"
+    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
@@ -40,13 +40,13 @@ def build_path_to_transcript_dict_mls_polish():
 
 def build_path_to_transcript_dict_mls_spanish():
     lang = "spanish"
-    root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
 def build_path_to_transcript_dict_mls_portuguese():
     lang = "portuguese"
-    root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
@@ -203,6 +203,117 @@ def build_path_to_transcript_dict_vctk():
                     ".txt") + "_mic2.flac"
                 if os.path.exists(wav_path):
                     path_to_transcript[wav_path] = transcript
+    return limit_to_n(path_to_transcript)
+
+
+def build_path_to_transcript_dict_common_voice_english():
+    lang = "en"
+    return build_path_to_transcript_dict_common_voice_template(lang)
+
+
+def build_path_to_transcript_dict_common_voice_german():
+    lang = "de"
+    return build_path_to_transcript_dict_common_voice_template(lang)
+
+
+def build_path_to_transcript_dict_common_voice_spanish():
+    lang = "es"
+    return build_path_to_transcript_dict_common_voice_template(lang)
+
+
+def build_path_to_transcript_dict_common_voice_french():
+    lang = "fr"
+    return build_path_to_transcript_dict_common_voice_template(lang)
+
+
+def build_path_to_transcript_dict_common_voice_portuguese():
+    lang = "pt"
+    return build_path_to_transcript_dict_common_voice_template(lang)
+
+
+def build_path_to_transcript_dict_common_voice_template(lang):
+    root = f"D:/Corpora/cv-corpus-15.0-2023-09-08/{lang}"
+    path_to_transcript = dict()
+    with open(os.path.join(root, "train.tsv"), "r", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("client_id"):
+                continue
+            cols = line.split("\t")
+            text = cols[2]
+            audio_file = os.path.join(root, "clips", cols[1])
+            path_to_transcript[audio_file] = text
+    return limit_to_n(path_to_transcript)
+
+
+def build_path_to_transcript_dict_pespa():
+    root = "D:/Corpora/pe_spa"
+    path_to_transcript = dict()
+    with open(os.path.join(root, "transcripts.tsv"), mode="r", encoding="utf-8") as f:
+        transcripts = f.read().split("\n")
+    for transcript in transcripts:
+        if transcript.strip() != "":
+            parsed_line = transcript.split("\t")
+            audio_title = parsed_line[0]
+            audio_file = os.path.join(root, "audios", audio_title+".wav")
+            path_to_transcript[audio_file] = parsed_line[1]
+    return limit_to_n(path_to_transcript)
+
+
+def build_path_to_transcript_dict_quechua():
+    root = "D:/Corpora/QuechuaSingleSpeaker"
+    path_to_transcript = dict()
+    with open(os.path.join(root, "transcripts.txt"), mode="r", encoding="cp1252") as f:
+        transcripts = f.read().split("\n")
+    for transcript in transcripts:
+        if transcript.strip() != "":
+            parsed_line = transcript.split("\"")
+            audio_title = parsed_line[0].split(" ")[1]
+            audio_file = os.path.join(root, "audios", audio_title+".wav")
+            path_to_transcript[audio_file] = parsed_line[1]
+    return limit_to_n(path_to_transcript)
+
+
+def build_path_to_transcript_dict_quest_quechua():
+    lang = "qu"
+    return build_path_to_transcript_dict_quest(lang)
+
+
+def build_path_to_transcript_dict_quest_spanish():
+    lang = "es"
+    return build_path_to_transcript_dict_quest(lang)
+
+
+def build_path_to_transcript_dict_quest(lang):
+    root = "D:/Corpora/QuEsT/"
+    path_to_transcript = dict()
+    for speaker in os.listdir(root):
+        with open(os.path.join(root, speaker, "transcripts.txt"), mode="r", encoding="utf-8") as f:
+            transcripts = f.read().split("\n")
+        for language in os.listdir(os.path.join(root, speaker)):
+            if language == lang:
+                for file,transcript in zip(os.listdir(os.path.join(root, speaker, language)),transcripts):
+                    if transcript.strip() != "":
+                        parsed_line = transcript.split("|")
+                        if lang == "qu":
+                            path_to_transcript[os.path.join(root, speaker, language, file)] = parsed_line[1]
+                        else:
+                            path_to_transcript[os.path.join(root, speaker, language, file)] = parsed_line[2]
+    return limit_to_n(path_to_transcript)
+
+
+def build_path_to_transcript_dict_librittsr():
+    root = "D:/Corpora/LibriTTS_R/"
+    path_to_transcript = dict()
+    for path_train in os.listdir(root):
+        if path_train != "LibriTTS_R":
+            for speaker in os.listdir(os.path.join(root, path_train)):
+                for chapter in os.listdir(os.path.join(root, path_train, speaker)):
+                    for file in os.listdir(os.path.join(root, path_train, speaker, chapter)):
+                        if file.endswith("normalized.txt"):
+                            with open(os.path.join(root, path_train, speaker, chapter, file), 'r', encoding='utf8') as tf:
+                                transcript = tf.read()
+                            wav_file = file.split(".")[0] + ".wav"
+                            path_to_transcript[os.path.join(root, path_train, speaker, chapter, wav_file)] = transcript
     return limit_to_n(path_to_transcript)
 
 
@@ -771,5 +882,5 @@ def build_path_to_transcript_dict_siwis_subset():
 
 
 if __name__ == '__main__':
-    ptt = build_path_to_transcript_dict_synpaflex_all()
+    ptt = build_path_to_transcript_dict_quest("qu")
     print(ptt)
