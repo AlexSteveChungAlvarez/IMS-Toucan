@@ -49,12 +49,12 @@ def train_loop(train_dataset,
     train_loader = DataLoader(batch_size=batch_size,
                               dataset=train_dataset,
                               drop_last=True,
-                              num_workers=8 if os.cpu_count() > 8 else max(os.cpu_count() - 2, 1),
+                              num_workers=0,#8 if os.cpu_count() > 8 else max(os.cpu_count() - 2, 1),
                               pin_memory=False,
                               shuffle=True,
-                              prefetch_factor=16,
+                              #prefetch_factor=16,
                               collate_fn=collate_and_pad,
-                              persistent_workers=True)
+                              persistent_workers=False)
 
     asr_model = Aligner().to(device)
     optim_asr = RAdam(asr_model.parameters(), lr=0.0001)
