@@ -157,7 +157,11 @@ class ArticulatoryCombinedTextFrontend:
             self.expand_abbreviations = lambda x: x
             if not silent:
                 print("Created a Farsi Text-Frontend")
-
+        elif language == "qu":
+            self.g2p_lang = "qu"
+            self.expand_abbreviations = lambda x: x
+            if not silent:
+                print("Created a Quechua Text-Frontend")
         else:
             print("Language not supported yet")
             sys.exit()
@@ -205,6 +209,8 @@ class ArticulatoryCombinedTextFrontend:
             return "这是一个复杂的句子，它甚至包含一个停顿。"
         elif lang == "vi":
             return "Đây là một câu phức tạp, nó thậm chí còn chứa một khoảng dừng."
+        elif lang == "qu":
+            return "Kayqa huk compleja frase, ¡huk pausayuqraqmi!"
         else:
             print(f"No example sentence specified for the language: {lang}\n "
                   f"Please specify an example sentence in the get_example_sentence function in Preprocessing/TextFrontend to track your progress.")
@@ -346,6 +352,7 @@ class ArticulatoryCombinedTextFrontend:
             ("\t", " "),
             ("¡", ""),
             ("¿", ""),
+            ("`","ˈ"),
             # unifying some phoneme representations
             ("ɫ", "l"),  # alveolopalatal
             ("ɚ", "ə"),
@@ -522,6 +529,8 @@ def get_language_id(language):
         return torch.LongTensor([16])
     elif language == "pt-br":
         return torch.LongTensor([17])
+    elif language == "qu":
+        return torch.LongTensor([18])
 
 
 if __name__ == '__main__':
