@@ -4,7 +4,8 @@ import random
 import sys
 
 import torch
-
+import traceback
+from Utility.utils import send_gmail
 from TrainingInterfaces.TrainingPipelines.Avocodo_combined import run as hifi_codo
 from TrainingInterfaces.TrainingPipelines.BigVGAN_combined import run as bigvgan
 from TrainingInterfaces.TrainingPipelines.FastSpeech2Embedding_IntegrationTest import run as fs_integration_test
@@ -14,9 +15,18 @@ from TrainingInterfaces.TrainingPipelines.ToucanTTS_IntegrationTest import run a
 from TrainingInterfaces.TrainingPipelines.ToucanTTS_MetaCheckpoint import run as meta
 from TrainingInterfaces.TrainingPipelines.ToucanTTS_Nancy import run as nancy
 from TrainingInterfaces.TrainingPipelines.finetuning_example import run as fine_tuning_example
+from TrainingInterfaces.TrainingPipelines.finetuning_qu_es import run as fine_qu
+from TrainingInterfaces.TrainingPipelines.ContentPreTrain_MetaCheckpoint import run as content_train
+from TrainingInterfaces.TrainingPipelines.UnetTTS_MetaCheckpoint import run as unet
 from TrainingInterfaces.TrainingPipelines.pretrain_aligner import run as aligner
 
 pipeline_dict = {
+    # ContentPreTrain pipeline
+    "content"       : content_train,
+    # UnetTTS pipeline
+    "unet"          : unet,
+    # finetuning quechua
+    "fine_qu"       : fine_qu,
     # the finetuning example
     "fine_ex"       : fine_tuning_example,
     # integration tests
@@ -98,11 +108,14 @@ if __name__ == '__main__':
     torch.manual_seed(131714)
     random.seed(131714)
     torch.random.manual_seed(131714)
-
-    pipeline_dict[args.pipeline](gpu_id=args.gpu_id,
-                                 resume_checkpoint=args.resume_checkpoint,
-                                 resume=args.resume,
-                                 finetune=args.finetune,
-                                 model_dir=args.model_save_dir,
-                                 use_wandb=args.wandb,
-                                 wandb_resume_id=args.wandb_resume_id)
+    try:
+        pipeline_dict[args.pipeline](gpu_id=args.gpu_id,
+                                    resume_checkpoint=args.resume_checkpoint,
+                                    resume=args.resume,
+                                    finetune=args.finetune,
+                                    model_dir=args.model_save_dir,
+                                    use_wandb=args.wandb,
+                                    wandb_resume_id=args.wandb_resume_id)
+    except Exception:
+        send_gmail("Ha ocurrido un error.", traceback.format_exc())
+    send_gmail("Terminó el entrenamiento.","Vuelve cuanto antes a probar tu nuevo modelo!")
