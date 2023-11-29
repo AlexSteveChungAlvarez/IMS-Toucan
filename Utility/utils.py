@@ -644,7 +644,7 @@ def subsequent_mask(size, device="cpu", dtype=torch.bool):
 
 def send_gmail(topic, message):
     yag = yagmail.SMTP(user = 'proyecto.investigacion.uni@gmail.com',password = 'ifxw gtow kibi wgkh')
-    receivers = ["schunga@uni.pe", "yeshy.ascencio.f@uni.pe"]
+    receivers = ["schunga@uni.pe",]
     yag.send(receivers,topic,message)
 
 class ScorerInterface:

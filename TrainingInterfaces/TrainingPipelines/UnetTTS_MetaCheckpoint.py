@@ -20,7 +20,7 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
 
     datasets = list()
 
-    base_dir = os.path.join(MODELS_DIR, "UnetTTS_qu_es")
+    base_dir = os.path.join(MODELS_DIR, "UnetTTS")
     content_encoder_dir = os.path.join(base_dir,"Content_Encoder","best.pt")
     if model_dir is not None:
         meta_save_dir = model_dir
@@ -30,28 +30,28 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
 
     print("Preparing")
 
-    #english_datasets = list()
-    #german_datasets = list()
+    english_datasets = list()
+    german_datasets = list()
     spanish_datasets = list()
-    #french_datasets = list()
-    #portuguese_datasets = list()
+    french_datasets = list()
+    portuguese_datasets = list()
     quechua_datasets = list()
 
-    #english_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_librittsr(),
-    #                                                  corpus_dir=os.path.join(PREPROCESSING_DIR, "LibriTTS_R"),
-    #                                                  lang="en"))
+    english_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_librittsr(),
+                                                      corpus_dir=os.path.join(PREPROCESSING_DIR, "LibriTTS_R"),
+                                                      lang="en"))
     
-    #english_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_english(),
-    #                                                  corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "english"),
-    #                                                  lang="en"))
+    english_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_english(),
+                                                      corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "english"),
+                                                      lang="en"))
 
-    #german_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_german(),
-    #                                                 corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "german"),
-    #                                                 lang="de"))
+    german_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_german(),
+                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "german"),
+                                                     lang="de"))
 
-    #german_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_german(),
-    #                                                 corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "german"),
-    #                                                 lang="de"))
+    german_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_german(),
+                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "german"),
+                                                     lang="de"))
 
     spanish_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_quest_spanish(),
                                                       corpus_dir=os.path.join(PREPROCESSING_DIR, "QuEsT","es"),
@@ -69,21 +69,21 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                                                       corpus_dir=os.path.join(PREPROCESSING_DIR, "pe_spa"),
                                                       lang="es"))
 
-    #french_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_french(),
-    #                                                 corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "french"),
-    #                                                 lang="fr"))
+    french_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_french(),
+                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "french"),
+                                                     lang="fr"))
 
-    #french_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_french(),
-    #                                                 corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "french"),
-    #                                                 lang="fr"))
+    french_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_french(),
+                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "french"),
+                                                     lang="fr"))
 
-    #portuguese_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_portuguese(),
-    #                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "portuguese"),
-    #                                                     lang="pt-br"))
+    portuguese_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_mls_portuguese(),
+                                                         corpus_dir=os.path.join(PREPROCESSING_DIR, "MultiLingLibriSpeech", "portuguese"),
+                                                         lang="pt-br"))
     
-    #portuguese_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_portuguese(),
-    #                                                     corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "portuguese"),
-    #                                                     lang="pt-br"))
+    portuguese_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_common_voice_portuguese(),
+                                                         corpus_dir=os.path.join(PREPROCESSING_DIR, "cv-corpus", "portuguese"),
+                                                         lang="pt-br"))
     
     quechua_datasets.append(prepare_unettts_corpus(transcript_dict=build_path_to_transcript_dict_quest_quechua(),
                                                       corpus_dir=os.path.join(PREPROCESSING_DIR, "QuEsT","qu"),
@@ -93,11 +93,11 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
                                                       corpus_dir=os.path.join(PREPROCESSING_DIR, "QuechuaSingleSpeaker"),
                                                       lang="qu"))
 
-    #datasets.append(ConcatDataset(english_datasets))
-    #datasets.append(ConcatDataset(german_datasets))
+    datasets.append(ConcatDataset(english_datasets))
+    datasets.append(ConcatDataset(german_datasets))
     datasets.append(ConcatDataset(spanish_datasets))
-    #datasets.append(ConcatDataset(french_datasets))
-    #datasets.append(ConcatDataset(portuguese_datasets))
+    datasets.append(ConcatDataset(french_datasets))
+    datasets.append(ConcatDataset(portuguese_datasets))
     datasets.append(ConcatDataset(quechua_datasets))
 
     model = UnetTTS(content_encoder_dir)
