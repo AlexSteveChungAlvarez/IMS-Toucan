@@ -1,5 +1,5 @@
 import os
-
+import sys
 import torch
 
 from InferenceInterfaces.ToucanTTSInterface import ToucanTTSInterface
@@ -44,8 +44,18 @@ def the_raven(version, model_id="Meta", exec_device="cpu", speed_over_quality=Tr
 if __name__ == '__main__':
     exec_device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"running on {exec_device}")
-
-    the_raven(version="MetaBaseline",
-              model_id="Meta",
-              exec_device=exec_device,
-              speed_over_quality=exec_device != "cuda")
+    os.makedirs("audios", exist_ok=True)
+    name = input("\nName of the .wav file? (or 'exit')\n")
+    if name == "exit":
+        sys.exit()
+    read_texts(model_id="Quechua_and_Spanish",
+               sentence="Este audio es una prueba de sonido para un proyecto.",
+               filename=f"audios/{name}_test_cloned_es.wav",
+               device=exec_device,
+               speaker_reference=f"D:/pruebas/{name}.wav",
+               language="es")
+    
+    #the_raven(version="MetaBaseline",
+    #          model_id="Meta",
+    #          exec_device=exec_device,
+    #          speed_over_quality=exec_device != "cuda")
