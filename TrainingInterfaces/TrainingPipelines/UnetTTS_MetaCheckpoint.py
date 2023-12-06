@@ -20,12 +20,12 @@ def run(gpu_id, resume_checkpoint, finetune, model_dir, resume, use_wandb, wandb
 
     datasets = list()
 
-    base_dir = os.path.join(MODELS_DIR, "UnetTTS")
+    base_dir = os.path.join(MODELS_DIR, "UnetTTS_Meta")
     content_encoder_dir = os.path.join(base_dir,"Content_Encoder","best.pt")
     if model_dir is not None:
         meta_save_dir = model_dir
     else:
-        meta_save_dir = os.path.join(base_dir,"Meta_Checkpoint")
+        meta_save_dir = os.path.join(base_dir)
     os.makedirs(meta_save_dir, exist_ok=True)
 
     print("Preparing")
