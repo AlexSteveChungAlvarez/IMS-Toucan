@@ -15,7 +15,7 @@ from Utility.utils import get_most_recent_checkpoint
 from Utility.utils import plot_progress_spec_contentpretrain
 from run_weight_averaging import average_checkpoints
 from run_weight_averaging import get_n_recent_checkpoints_paths
-from run_weight_averaging import load_net_toucan
+from run_weight_averaging import load_net_content
 from run_weight_averaging import save_model_for_use
 
 
@@ -223,8 +223,8 @@ def train_loop(net,
             if step_counter > 3 * postnet_start_steps:
                 # Run manual SWA (torch builtin doesn't work unfortunately due to the use of weight norm in the postflow)
                 checkpoint_paths = get_n_recent_checkpoints_paths(checkpoint_dir=save_directory, n=2)
-                averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_toucan)
-                save_model_for_use(model=averaged_model, default_embed=default_embed, name=os.path.join(save_directory, "best.pt"))
+                averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_content)
+                save_model_for_use(model=averaged_model, encoder=averaged_model.encoder, default_embed=default_embed, name=os.path.join(save_directory, "best.pt"))
                 check_dict = torch.load(os.path.join(save_directory, "best.pt"), map_location=device)
                 net.load_state_dict(check_dict["model"])
 
