@@ -7,6 +7,7 @@ from Layers.ConvModule import ConvModule
 
 class DecConvBlock(nn.Module):
     def __init__(self, 
+                 input_size,
                  in_hidden_size,
                  dec_kernel_size,
                  gen_kernel_size,
@@ -14,9 +15,11 @@ class DecConvBlock(nn.Module):
         super(DecConvBlock,self).__init__(**kwargs)
 
         self.dec_conv = ConvModule(
+                    input_size,
                     in_hidden_size,
                     dec_kernel_size)
         self.gen_conv = ConvModule(
+                    input_size,
                     in_hidden_size,
                     gen_kernel_size)
         

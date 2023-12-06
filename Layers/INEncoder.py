@@ -21,6 +21,7 @@ class INEncoder(nn.Module):
     """
     
     def __init__(self,
+                 input_size,
                  in_hidden_size,
                  out_hidden_size,
                  n_conv_blocks,
@@ -28,11 +29,11 @@ class INEncoder(nn.Module):
                  **kwargs):
         super(INEncoder,self).__init__(**kwargs)
         
-        self.in_conv = ConvNorm(in_hidden_size)
-        self.out_conv = ConvNorm(out_hidden_size)
+        self.in_conv = ConvNorm(input_size,in_hidden_size)
+        self.out_conv = ConvNorm(in_hidden_size,out_hidden_size)
         self.inorm = InstanceNormalizationLayer()
         self.conv_blocks = nn.ModuleList(
-            [EncConvBlock(in_hidden_size,enc_kernel_size)
+            [EncConvBlock(in_hidden_size,in_hidden_size,enc_kernel_size)
                             for _ in range(n_conv_blocks)]
                         )
 

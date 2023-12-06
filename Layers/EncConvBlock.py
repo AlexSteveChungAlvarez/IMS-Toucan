@@ -6,13 +6,15 @@ from torch import nn
 from Layers.ConvModule import ConvModule
 
 class EncConvBlock(nn.Module):
-    def __init__(self, 
+    def __init__(self,
+                 input_size, 
                  in_hidden_size,
                  enc_kernel_size, 
                  **kwargs):
         super(EncConvBlock,self).__init__(**kwargs)
 
         self.conv = ConvModule(
+                    input_size,
                     in_hidden_size,
                     enc_kernel_size)
 
