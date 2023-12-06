@@ -146,10 +146,9 @@ class ContentPreTrain(torch.nn.Module):
     def _forward(self,
                  text_tensors,
                  text_lengths,
-                 gold_durations,
+                 gold_durations=None,
                  gold_speech=None,
                  speech_lengths=None,
-                 content_training=True,
                  is_inference=False,
                  utterance_embedding=None,
                  lang_ids=None,
@@ -163,7 +162,7 @@ class ContentPreTrain(torch.nn.Module):
         else:
             utterance_embedding = torch.nn.functional.normalize(utterance_embedding)
 
-        encoded_texts, _, predicted_durations = self.encoder(text_tensors,text_lengths,utterance_embedding,lang_ids,gold_durations,content_training)
+        encoded_texts, _, predicted_durations = self.encoder(text_tensors,text_lengths,utterance_embedding,lang_ids,gold_durations,is_inference)
 
         # decoding spectrogram
         decoder_masks = make_non_pad_mask(speech_lengths, device=speech_lengths.device).unsqueeze(-2) if speech_lengths is not None and not is_inference else None
@@ -233,7 +232,6 @@ class ContentPreTrain(torch.nn.Module):
                                            ilens,
                                            gold_durations,
                                            ys,
-                                           content_training=False,
                                            is_inference=True,
                                            utterance_embedding=utterance_embeddings,
                                            lang_ids=lang_id,
@@ -249,3 +247,14 @@ class ContentPreTrain(torch.nn.Module):
         # initialize parameters
         if init_type != "pytorch":
             initialize(self, init_type)
+            
+    def store_inverse_all(self):
+        def remove_weight_norm(m):
+            try:
+                if hasattr(m, 'store_inverse'):
+                    m.store_inverse()
+                torch.nn.utils.remove_weight_norm(m)
+            except ValueError:  # this module didn't have weight norm
+                return
+
+        self.apply(remove_weight_norm)
