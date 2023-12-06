@@ -2,11 +2,11 @@ import os
 import sys
 import torch
 
-from InferenceInterfaces.ToucanTTSInterface import ToucanTTSInterface
+from InferenceInterfaces.ContentPreTrainTTSInterface import ContentPreTrainTTSInterface
 
 
 def read_texts(model_id, sentence, filename, device="cpu", language="en", speaker_reference=None, faster_vocoder=False):
-    tts = ToucanTTSInterface(device=device, tts_model_path=model_id, faster_vocoder=faster_vocoder)
+    tts = ContentPreTrainTTSInterface(device=device, tts_model_path=model_id, faster_vocoder=faster_vocoder)
     tts.set_language(language)
     if speaker_reference is not None:
         tts.set_utterance_embedding(speaker_reference)
@@ -48,12 +48,26 @@ if __name__ == '__main__':
     name = input("\nName of the .wav file? (or 'exit')\n")
     if name == "exit":
         sys.exit()
-    read_texts(model_id="Quechua_and_Spanish",
+    read_texts(model_id="Meta",
                sentence="Este audio es una prueba de sonido para un proyecto.",
-               filename=f"audios/{name}_test_cloned_es.wav",
+               filename=f"audios/{name}_test2_cloned_es.wav",
                device=exec_device,
                speaker_reference=f"D:/pruebas/{name}.wav",
                language="es")
+    
+    read_texts(model_id="Meta",
+               sentence="Qantapuni qhawashayki warmiypaq.",
+               filename=f"audios/{name}_test2_cloned_qu.wav",
+               device=exec_device,
+               speaker_reference=f"D:/pruebas/{name}.wav",
+               language="qu")
+    
+    read_texts(model_id="Meta",
+               sentence="Cet audio est un test de son pour un projet.",
+               filename=f"audios/{name}_test2_cloned_fr.wav",
+               device=exec_device,
+               speaker_reference=f"D:/pruebas/{name}.wav",
+               language="fr")
     
     #the_raven(version="MetaBaseline",
     #          model_id="Meta",
