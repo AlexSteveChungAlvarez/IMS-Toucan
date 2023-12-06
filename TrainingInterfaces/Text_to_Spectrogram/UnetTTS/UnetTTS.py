@@ -27,12 +27,14 @@ class UnetTTS(torch.nn.Module):
         
         self.content_encoder = ContentEncoder()
         
-        self.in_encoder = INEncoder(in_hidden_size=adain_filter_size,
+        self.in_encoder = INEncoder(input_size=num_mels,
+                                    in_hidden_size=adain_filter_size,
                                     out_hidden_size=content_latent_dim,
                                     n_conv_blocks=n_conv_blocks,
                                     enc_kernel_size=ada_in_kernel_size)
 
-        self.ada_in_decoder = AdaINDecoder(in_hidden_size=adain_filter_size,
+        self.ada_in_decoder = AdaINDecoder(input_size=content_latent_dim,
+                                           in_hidden_size=adain_filter_size,
                                            out_hidden_size=num_mels,
                                            n_conv_blocks=n_conv_blocks,
                                            dec_kernel_size=ada_in_kernel_size,
@@ -42,15 +44,13 @@ class UnetTTS(torch.nn.Module):
             self.load_state_dict(weights)
             self.eval()
         else:
-            self.criterion = UnetTTSLoss()
-            self.text_encoder_weight_load(content_encoder_path)
-        
-    def text_encoder_weight_load(self, content_encoder_path):
-        check_dict = torch.load(content_encoder_path)
-        self.content_encoder.load_state_dict(torch.load(check_dict["content_encoder"]))
-        self.content_encoder.eval()
-        self.in_encoder.eval()
-        self.ada_in_decoder.eval()
+            check_dict = torch.load(content_encoder_path, map_location='cpu')
+            self.load_state_dict(check_dict["content_encoder"])
+            self.content_encoder.requires_grad_(False)
+            self.content_encoder.eval()
+            self.in_encoder.eval()
+            self.ada_in_decoder.eval()
+            self.criterion = UnetTTSLoss()        
         
     def forward(self,
                 text_tensors,
@@ -60,7 +60,6 @@ class UnetTTS(torch.nn.Module):
                 gold_durations,
                 utterance_embedding,
                 lang_ids=None,
-                content_training=False,
                 is_inference=False):
         """
         Args:
@@ -81,7 +80,6 @@ class UnetTTS(torch.nn.Module):
                                              gold_durations,
                                              utterance_embedding,
                                              lang_ids,
-                                             content_training,
                                              is_inference)
         
         # calculate loss
@@ -100,10 +98,9 @@ class UnetTTS(torch.nn.Module):
                  text_tensors,
                  text_lengths,
                  gold_speech,
-                 gold_durations,
+                 gold_durations=None,
                  utterance_embedding=None,
                  lang_ids=None,
-                 content_training=False,
                  is_inference=False):
         
         if not self.content_encoder.multilingual_model:
@@ -114,7 +111,7 @@ class UnetTTS(torch.nn.Module):
         else:
             utterance_embedding = torch.nn.functional.normalize(utterance_embedding)
 
-        content_latents,encoder_masks,predicted_durations = self.content_encoder(text_tensors,text_lengths,utterance_embedding,lang_ids,gold_durations,content_training)
+        content_latents,encoder_masks,predicted_durations = self.content_encoder(text_tensors,text_lengths,utterance_embedding,lang_ids,gold_durations,is_inference)
         #content_latents = content_latents * encoder_masks.unsqueeze(2).type(content_latents.dtype)
         if is_inference:
             encoder_masks = torch.ones([gold_speech.size(dim=0),gold_speech.size(dim=1)],dtype=bool)
