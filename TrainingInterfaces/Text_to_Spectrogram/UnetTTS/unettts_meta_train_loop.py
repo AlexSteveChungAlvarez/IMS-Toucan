@@ -188,7 +188,7 @@ def train_loop(net,
                     "step_counter": step_counter,
                     "default_emb" : default_embedding,
                 },
-                    os.path.join(save_directory, "checkpoint_{}.pt".format(step_counter)))
+                    os.path.join(save_directory, "best.pt".format(step_counter)))
             else:
                 torch.save({
                     "model"       : net.state_dict(),
