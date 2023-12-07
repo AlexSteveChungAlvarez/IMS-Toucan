@@ -45,7 +45,7 @@ class UnetTTS(torch.nn.Module):
             self.eval()
         else:
             check_dict = torch.load(content_encoder_path, map_location='cpu')
-            self.load_state_dict(check_dict["content_encoder"])
+            self.content_encoder.load_state_dict(check_dict["content_encoder"])
             self.content_encoder.requires_grad_(False)
             self.content_encoder.eval()
             self.in_encoder.eval()
