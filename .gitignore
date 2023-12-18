@@ -10,7 +10,9 @@ pretrained_models/
 .vscode/
 split/
 singing/
-toucan_conda_venv/
+__pycache__/
+.conda/
+wandb/
 venv/
 vis/
 
