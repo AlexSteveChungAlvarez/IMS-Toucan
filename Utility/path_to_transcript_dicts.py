@@ -22,13 +22,13 @@ def build_path_to_transcript_dict_mls_italian():
 
 def build_path_to_transcript_dict_mls_french():
     lang = "french"
-    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"/media/alex/Nuevo vol/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
 def build_path_to_transcript_dict_mls_german():
     lang = "german"
-    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"/media/alex/Nuevo vol/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
@@ -40,13 +40,13 @@ def build_path_to_transcript_dict_mls_polish():
 
 def build_path_to_transcript_dict_mls_spanish():
     lang = "spanish"
-    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"/media/alex/Nuevo vol/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
 def build_path_to_transcript_dict_mls_portuguese():
     lang = "portuguese"
-    root = f"D:/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    root = f"/media/alex/Nuevo vol/Corpora/MultiLingLibriSpeech/mls_{lang}/train"
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
@@ -232,7 +232,7 @@ def build_path_to_transcript_dict_common_voice_portuguese():
 
 
 def build_path_to_transcript_dict_common_voice_template(lang):
-    root = f"D:/Corpora/cv-corpus-15.0-2023-09-08/{lang}"
+    root = f"/media/alex/Nuevo vol/Corpora/cv-corpus-15.0-2023-09-08/{lang}"
     path_to_transcript = dict()
     with open(os.path.join(root, "train.tsv"), "r", encoding="utf-8") as f:
         for line in f:
@@ -246,7 +246,7 @@ def build_path_to_transcript_dict_common_voice_template(lang):
 
 
 def build_path_to_transcript_dict_pespa():
-    root = "D:/Corpora/pe_spa"
+    root = "/media/alex/Nuevo vol/Corpora/pe_spa"
     path_to_transcript = dict()
     with open(os.path.join(root, "transcripts.tsv"), mode="r", encoding="utf-8") as f:
         transcripts = f.read().split("\n")
@@ -260,7 +260,7 @@ def build_path_to_transcript_dict_pespa():
 
 
 def build_path_to_transcript_dict_quechua():
-    root = "D:/Corpora/QuechuaSingleSpeaker"
+    root = "/media/alex/Nuevo vol/Corpora/QuechuaSingleSpeaker"
     path_to_transcript = dict()
     with open(os.path.join(root, "transcripts.txt"), mode="r", encoding="cp1252") as f:
         transcripts = f.read().split("\n")
@@ -284,7 +284,7 @@ def build_path_to_transcript_dict_quest_spanish():
 
 
 def build_path_to_transcript_dict_quest(lang):
-    root = "D:/Corpora/QuEsT/"
+    root = "/media/alex/Nuevo vol/Corpora/QuEsT/"
     path_to_transcript = dict()
     for speaker in os.listdir(root):
         with open(os.path.join(root, speaker, "transcripts.txt"), mode="r", encoding="utf-8") as f:
@@ -302,7 +302,7 @@ def build_path_to_transcript_dict_quest(lang):
 
 
 def build_path_to_transcript_dict_librittsr():
-    root = "D:/Corpora/LibriTTS_R/"
+    root = "/media/alex/Nuevo vol/Corpora/LibriTTS_R/"
     path_to_transcript = dict()
     for path_train in os.listdir(root):
         if path_train != "LibriTTS_R":

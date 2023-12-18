@@ -389,7 +389,7 @@ def plot_progress_spec_unettts(net,
         return None
     phoneme_vector = tf.string_to_tensor(sentence).squeeze(0).to(device)
     spec_before, durations = net.inference(text=phoneme_vector,
-                                           gold_speech = speech,
+                                           speech = speech,
                                            gold_durations = gold_durations,
                                            utterance_embedding=default_emb,
                                            lang_id=get_language_id(lang).to(device))

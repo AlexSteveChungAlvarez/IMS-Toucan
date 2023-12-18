@@ -1,2 +1,2 @@
 MODELS_DIR = "Models/"
-PREPROCESSING_DIR = "Corpora/"
+PREPROCESSING_DIR = "/media/alex/Nuevo vol/pruebas/IMS-Toucan/Corpora/"
