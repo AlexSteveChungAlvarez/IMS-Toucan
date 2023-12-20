@@ -32,6 +32,12 @@ def build_path_to_transcript_dict_mls_german():
     return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
 
 
+def build_path_to_transcript_dict_mls_dutch():
+    lang = "dutch"
+    root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
+    return limit_to_n(build_path_to_transcript_dict_multi_ling_librispeech_template(root=root))
+
+
 def build_path_to_transcript_dict_mls_polish():
     lang = "polish"
     root = f"/mount/resources/speech/corpora/MultiLingLibriSpeech/mls_{lang}/train"
