@@ -213,7 +213,7 @@ def train_loop(net,
                                                                       device,
                                                                       save_directory,
                                                                       step_counter,
-                                                                      gold_speech,
+                                                                      datasets[0][0][2].to(device),
                                                                       gold_durations,
                                                                       lang,
                                                                       default_embedding)
