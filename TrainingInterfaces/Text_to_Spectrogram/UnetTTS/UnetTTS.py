@@ -16,7 +16,7 @@ class UnetTTS(torch.nn.Module):
                  n_conv_blocks=6,
                                   
                  # IN encoder
-                 content_latent_dim=132,
+                 content_latent_dim=192,
                  
                  # Ada-IN decoder
                  num_mels=80,
@@ -45,8 +45,7 @@ class UnetTTS(torch.nn.Module):
             self.eval()
         else:
             check_dict = torch.load(content_encoder_path, map_location='cpu')
-            self.content_encoder.load_state_dict(check_dict["content_encoder"])
-            self.content_encoder.requires_grad_(False)
+            self.load_state_dict(check_dict["model"],strict=False)
             self.content_encoder.eval()
             self.in_encoder.eval()
             self.ada_in_decoder.eval()
@@ -112,14 +111,12 @@ class UnetTTS(torch.nn.Module):
             utterance_embedding = torch.nn.functional.normalize(utterance_embedding)
 
         content_latents,encoder_masks,predicted_durations = self.content_encoder(text_tensors,text_lengths,utterance_embedding,lang_ids,gold_durations,is_inference)
-        #content_latents = content_latents * encoder_masks.unsqueeze(2).type(content_latents.dtype)
         if is_inference:
-            encoder_masks = torch.ones([gold_speech.size(dim=0),gold_speech.size(dim=1)],dtype=bool)
-        content_latents_pred, means, stds = self.in_encoder(gold_speech, encoder_masks)
-        #content_latents_pred = content_latents_pred * encoder_masks.unsqueeze(2).type(content_latents_pred.dtype)
-        
+            tmp_masks = torch.ones([gold_speech.size(dim=0),gold_speech.size(dim=1)],dtype=bool,device=gold_speech.device)
+            encoder_masks = torch.ones([content_latents.size(dim=0),content_latents.size(dim=1)],dtype=bool,device=content_latents.device)
+        content_latents_pred, means, stds = self.in_encoder(gold_speech, encoder_masks if not is_inference else tmp_masks)
         mel_before = self.ada_in_decoder(content_latents, (content_latents_pred, means, stds), encoder_masks)
-        #mel_before = mel_before * encoder_masks.unsqueeze(2).type(mel_before.dtype)
+
         if is_inference:
             return mel_before.squeeze(), predicted_durations.squeeze()
         else:
