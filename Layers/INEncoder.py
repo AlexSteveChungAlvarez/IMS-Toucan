@@ -7,6 +7,7 @@ from torch import nn
 from Layers.InstanceNormalizationLayer import InstanceNormalizationLayer
 from Layers.EncConvBlock import EncConvBlock
 from Layers.ConvNorm import ConvNorm
+from Layers.LayerNorm import LayerNorm
 
 class INEncoder(nn.Module):
     """
@@ -28,7 +29,7 @@ class INEncoder(nn.Module):
                  enc_kernel_size,
                  **kwargs):
         super(INEncoder,self).__init__(**kwargs)
-        
+        self.layer_norm = LayerNorm(in_hidden_size)
         self.in_conv = ConvNorm(input_size,in_hidden_size)
         self.out_conv = ConvNorm(in_hidden_size,out_hidden_size)
         self.inorm = InstanceNormalizationLayer()
@@ -40,17 +41,18 @@ class INEncoder(nn.Module):
     def forward(self,x,mask):
         means = []
         stds = []
-        
+        x = x.transpose(1, 2) # num_mels (80) need to be in the channels axis (1).
         y = self.in_conv(x) # 80 -> 256
 
         for block in self.conv_blocks:
             y = block(y)
+            y = self.layer_norm(y.transpose(1,2))
             y, mean, std = self.inorm(y, mask, return_mean_std=True)
+            y = self.layer_norm(y).transpose(1,2)
             means.append(mean)
             stds.append(std)
 
-        y = self.out_conv(y) # 256 -> 128 + 4
-
+        y = self.out_conv(y).transpose(1, 2) # 256 -> 192
         means.reverse()
         stds.reverse()
 

@@ -7,10 +7,11 @@ from torch import nn
 from Layers.InstanceNormalizationLayer import InstanceNormalizationLayer
 from Layers.DecConvBlock import DecConvBlock
 from Layers.ConvNorm import ConvNorm
+from Layers.LayerNorm import LayerNorm
 
 class AdaINDecoder(nn.Module):
     """
-    Instance Normalization Encoder layer module
+    Instance Normalization Decoder layer module
 
     Args:
         in_hidden_size (int):
@@ -41,17 +42,19 @@ class AdaINDecoder(nn.Module):
                                  gen_kernel_size)
                     for _ in range(n_conv_blocks)]
                     )
-
+        self.layer_norm = LayerNorm(in_hidden_size)
+        
     def forward(self,enc,cond,mask):
         _, means, stds = cond
-        
-        y = self.in_conv(enc) # 132 -> 256
-
+        enc = enc.transpose(1, 2)
+        y = self.in_conv(enc) # 192 -> 256
         for block,mean,std in zip(self.conv_blocks,means,stds):
+            y = self.layer_norm(y.transpose(1,2))
             y = self.inorm(y, mask)
             y = y * std.unsqueeze(1) + mean.unsqueeze(1)
+            y = self.layer_norm(y).transpose(1,2)
             y = block(y)
 
-        y = self.out_conv(y) # 256 -> 80
+        y = self.out_conv(y).transpose(1, 2) # 256 -> 80
 
         return y
