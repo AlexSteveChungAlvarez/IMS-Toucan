@@ -11,6 +11,7 @@ from TrainingInterfaces.Spectrogram_to_Wave.HiFiGAN.HiFiGAN import HiFiGANGenera
 from TrainingInterfaces.Text_to_Spectrogram.StochasticToucanTTS.StochasticToucanTTS import StochasticToucanTTS
 from TrainingInterfaces.Text_to_Spectrogram.ToucanTTS.ToucanTTS import ToucanTTS
 from TrainingInterfaces.Text_to_Spectrogram.ContentPreTrain.ContentPreTrain import ContentPreTrain
+from TrainingInterfaces.Text_to_Spectrogram.UnetTTS.UnetTTS import UnetTTS
 from Utility.storage_config import MODELS_DIR
 
 
@@ -45,7 +46,14 @@ def load_net_content(path):
     check_dict = torch.load(path, map_location=torch.device("cpu"))
     net = ContentPreTrain()
     net.load_state_dict(check_dict["model"])
-    return net, net.encoder, check_dict["default_emb"]
+    return net, check_dict["default_emb"]
+
+
+def load_net_unet(path):
+    check_dict = torch.load(path, map_location=torch.device("cpu"))
+    net = UnetTTS(os.path.join(MODELS_DIR, "UnetTTS_Meta","Content_Encoder","best.pt"))
+    net.load_state_dict(check_dict["model"])
+    return net, check_dict["default_emb"]
     
 
 def load_net_hifigan(path):
@@ -113,24 +121,15 @@ def average_checkpoints(list_of_checkpoint_paths, load_func):
     return model, default_embed
 
 
-def save_model_for_use(model, name="", encoder=None, default_embed=None, dict_name="model"):
+def save_model_for_use(model, name="", default_embed=None, dict_name="model"):
     print("saving model...")
     if default_embed is None:
         # HiFiGAN case
         torch.save({dict_name: model.state_dict()}, name)
-    elif encoder is None:
+    else:
         # TTS case
         torch.save({dict_name: model.state_dict(), "default_emb": default_embed}, name)
-    else:
-        # Content Encoder case
-        torch.save({dict_name: model.state_dict(), "content_encoder": encoder.state_dict(), "default_emb": default_embed}, name)
     print("...done!")
-
-
-def make_best_in_content_encoder():
-    checkpoint_paths = get_n_recent_checkpoints_paths(checkpoint_dir=os.path.join(MODELS_DIR, "UnetTTS_Meta", "Content_Encoder"), n=5)
-    averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_content)
-    save_model_for_use(model=averaged_model, encoder=averaged_model.encoder, default_embed=default_embed, name=os.path.join(MODELS_DIR, "UnetTTS_Meta", "Content_Encoder", "best.pt"))
     
     
 def make_best_in_all():
@@ -173,5 +172,4 @@ def show_all_models_params():
 
 
 if __name__ == '__main__':
-    #make_best_in_all()
-    make_best_in_content_encoder()
+    make_best_in_all()
