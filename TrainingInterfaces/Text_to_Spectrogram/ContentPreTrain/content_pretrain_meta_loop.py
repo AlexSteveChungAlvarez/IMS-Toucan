@@ -178,7 +178,6 @@ def train_loop(net,
             print("Steps:                  {}\n".format(step_counter))
             torch.save({
                 "model"       : net.state_dict(),
-                "content_encoder": net.encoder.state_dict(),
                 "optimizer"   : optimizer.state_dict(),
                 "scaler"      : grad_scaler.state_dict(),
                 "scheduler"   : scheduler.state_dict(),
@@ -224,7 +223,7 @@ def train_loop(net,
                 # Run manual SWA (torch builtin doesn't work unfortunately due to the use of weight norm in the postflow)
                 checkpoint_paths = get_n_recent_checkpoints_paths(checkpoint_dir=save_directory, n=2)
                 averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_content)
-                save_model_for_use(model=averaged_model, encoder=averaged_model.encoder, default_embed=default_embed, name=os.path.join(save_directory, "best.pt"))
+                save_model_for_use(model=averaged_model, default_embed=default_embed, name=os.path.join(save_directory, "best.pt"))
                 check_dict = torch.load(os.path.join(save_directory, "best.pt"), map_location=device)
                 net.load_state_dict(check_dict["model"])
 
