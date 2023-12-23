@@ -148,10 +148,6 @@ def train_loop(net,
 
             if not torch.isnan(l1_loss):
                 train_loss = train_loss + l1_loss
-            else:
-                print("L1 Loss:")
-                print(l1_loss)
-                break
             if not torch.isnan(l2_loss):
                 train_loss = train_loss + l2_loss
             if not torch.isnan(duration_loss):
