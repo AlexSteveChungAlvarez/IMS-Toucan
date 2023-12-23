@@ -85,9 +85,10 @@ class ContentEncoder(nn.Module):
         # encoding the texts
         text_masks = make_non_pad_mask(text_lengths, device=text_lengths.device).unsqueeze(-2)
         padding_masks = make_pad_mask(text_lengths, device=text_lengths.device)
-        encoder_masks = make_non_pad_mask(sum(gold_durations,-1), device=gold_durations.device)
+        
         content_latents, _ = self.encoder(text_tensors, text_masks, utterance_embedding=utterance_embedding, lang_ids=lang_ids)
         if is_inference:
+            encoder_masks = None
             predicted_durations = self.duration_predictor.inference(content_latents, padding_mask=None, utt_embed=utterance_embedding)
             # modifying the predictions with linguistic knowledge
             for phoneme_index, phoneme_vector in enumerate(text_tensors.squeeze(0)):
@@ -95,6 +96,7 @@ class ContentEncoder(nn.Module):
                     predicted_durations[0][phoneme_index] = 0
             content_latents = self.length_regulator(content_latents, predicted_durations)
         else:
+            encoder_masks = make_non_pad_mask(sum(gold_durations,-1), device=gold_durations.device)
             predicted_durations = self.duration_predictor(content_latents, padding_mask=padding_masks, utt_embed=utterance_embedding)
             content_latents = self.length_regulator(content_latents, gold_durations)
             
