@@ -2,17 +2,17 @@ import os
 import sys
 import torch
 
-from InferenceInterfaces.ContentPreTrainTTSInterface import ContentPreTrainTTSInterface
+from InferenceInterfaces.UnetTTSInterface import UnetTTSInterface
 
 
 def read_texts(model_id, sentence, filename, device="cpu", language="en", speaker_reference=None, faster_vocoder=False):
-    tts = ContentPreTrainTTSInterface(device=device, tts_model_path=model_id, faster_vocoder=faster_vocoder)
+    tts = UnetTTSInterface(device=device, tts_model_path=model_id, faster_vocoder=faster_vocoder)
     tts.set_language(language)
     if speaker_reference is not None:
         tts.set_utterance_embedding(speaker_reference)
     if type(sentence) == str:
         sentence = [sentence]
-    tts.read_to_file(text_list=sentence, file_location=filename)
+    tts.read_to_file(text_list=sentence, file_location=filename, speaker_reference=speaker_reference)
     del tts
 
 
@@ -49,24 +49,24 @@ if __name__ == '__main__':
     if name == "exit":
         sys.exit()
     read_texts(model_id="Meta",
-               sentence="Este audio es una prueba de sonido para un proyecto.",
-               filename=f"audios/{name}_test2_cloned_es.wav",
+               sentence="This audio is a prove of concept for Unet TTS.",
+               filename=f"audios/{name}_Unet_test_cloned_en.wav",
                device=exec_device,
-               speaker_reference=f"D:/pruebas/{name}.wav",
-               language="es")
+               speaker_reference=f"/media/alex/Nuevo vol/pruebas/{name}.wav",
+               language="en")
     
     read_texts(model_id="Meta",
                sentence="Qantapuni qhawashayki warmiypaq.",
-               filename=f"audios/{name}_test2_cloned_qu.wav",
+               filename=f"audios/{name}_Unet_test_cloned_qu.wav",
                device=exec_device,
-               speaker_reference=f"D:/pruebas/{name}.wav",
+               speaker_reference=f"/media/alex/Nuevo vol/pruebas/{name}.wav",
                language="qu")
     
     read_texts(model_id="Meta",
                sentence="Cet audio est un test de son pour un projet.",
-               filename=f"audios/{name}_test2_cloned_fr.wav",
+               filename=f"audios/{name}_Unet_test_cloned_fr.wav",
                device=exec_device,
-               speaker_reference=f"D:/pruebas/{name}.wav",
+               speaker_reference=f"/media/alex/Nuevo vol/pruebas/{name}.wav",
                language="fr")
     
     #the_raven(version="MetaBaseline",
