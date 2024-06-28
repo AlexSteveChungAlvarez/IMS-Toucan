@@ -4,7 +4,7 @@ from Layers.INEncoder import INEncoder
 from Layers.AdaINConformer import AdaInConformer
 from Layers.PostNet import PostNet
 from TrainingInterfaces.Text_to_Spectrogram.ToucanTTS.Glow import Glow
-from TrainingInterfaces.Text_to_Spectrogram.UnetTTS.UnetTTSLoss import UnetTTSLoss
+from TrainingInterfaces.Text_to_Spectrogram.UnetTTS2.UnetTTSLoss import UnetTTSLoss
 from Utility.utils import initialize
 from Utility.utils import make_non_pad_mask
 

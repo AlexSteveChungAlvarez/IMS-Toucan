@@ -5,8 +5,8 @@ import torch.multiprocessing
 import wandb
 from torch.utils.data import ConcatDataset
 
-from TrainingInterfaces.Text_to_Spectrogram.UnetTTS.UnetTTS import UnetTTS
-from TrainingInterfaces.Text_to_Spectrogram.UnetTTS.unettts_train_loop_arbiter import train_loop
+from TrainingInterfaces.Text_to_Spectrogram.UnetTTS2.UnetTTS import UnetTTS
+from TrainingInterfaces.Text_to_Spectrogram.UnetTTS2.unettts_train_loop_arbiter import train_loop
 from Utility.corpus_preparation import prepare_unettts_corpus
 from Utility.path_to_transcript_dicts import *
 from Utility.storage_config import MODELS_DIR

@@ -11,7 +11,7 @@ from TrainingInterfaces.Spectrogram_to_Wave.HiFiGAN.HiFiGAN import HiFiGANGenera
 from TrainingInterfaces.Text_to_Spectrogram.StochasticToucanTTS.StochasticToucanTTS import StochasticToucanTTS
 from TrainingInterfaces.Text_to_Spectrogram.ToucanTTS.ToucanTTS import ToucanTTS
 from TrainingInterfaces.Text_to_Spectrogram.ContentPreTrain.ContentPreTrain import ContentPreTrain
-from TrainingInterfaces.Text_to_Spectrogram.UnetTTS.UnetTTS import UnetTTS
+from TrainingInterfaces.Text_to_Spectrogram.UnetTTS2.UnetTTS import UnetTTS
 from Utility.storage_config import MODELS_DIR
 
 

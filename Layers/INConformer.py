@@ -9,12 +9,12 @@ from Layers.Convolution import ConvolutionModule
 from Layers.EncoderLayer import EncoderLayer
 from Layers.LayerNorm import LayerNorm
 from Layers.MultiLayeredConv1d import MultiLayeredConv1d
-from Layers.InstanceNormalizationLayer import InstanceNormalizationLayer
+from Layers.MultiSequential import repeat
 from Layers.PositionalEncoding import RelPositionalEncoding
 from Layers.Swish import Swish
 
 
-class AdaInConformer(torch.nn.Module):
+class INConformer(torch.nn.Module):
     """
     Conformer encoder module.
 
@@ -45,17 +45,24 @@ class AdaInConformer(torch.nn.Module):
 
     """
 
-    def __init__(self, attention_dim=192, attention_heads=4, linear_units=1536, num_blocks=8, dropout_rate=0.1, positional_dropout_rate=0.1,
-                 attention_dropout_rate=0.1, normalize_before=False, concat_after=False, positionwise_conv_kernel_size=1,
-                 macaron_style=True, use_cnn_module=True, cnn_module_kernel=31, zero_triu=False, output_spectrogram_channels=80):
-        super(AdaInConformer, self).__init__()
+    def __init__(self, idim=62, attention_dim=192, attention_heads=4, linear_units=1536, num_blocks=6, dropout_rate=0.2, positional_dropout_rate=0.2,
+                 attention_dropout_rate=0.2, normalize_before=True, concat_after=False, positionwise_conv_kernel_size=1,
+                 macaron_style=True, use_cnn_module=True, cnn_module_kernel=7, zero_triu=False, utt_embed=64, lang_embs=8000, use_output_norm=True):
+        super(INConformer, self).__init__()
 
         activation = Swish()
         self.conv_subsampling_factor = 1
-        self.output_spectrogram_channels = output_spectrogram_channels
-        self.pos_enc = torch.nn.Sequential(RelPositionalEncoding(attention_dim, positional_dropout_rate))
-        self.layer_norm = LayerNorm(attention_dim)
-        self.inorm = InstanceNormalizationLayer()
+        self.use_output_norm = use_output_norm
+
+        self.embed = torch.nn.Sequential(torch.nn.Linear(idim, 100), torch.nn.Tanh(), torch.nn.Linear(100, attention_dim))
+        self.pos_enc = RelPositionalEncoding(attention_dim, positional_dropout_rate)
+        self.inorm = torch.nn.InstanceNorm1d(attention_dim)
+
+        if self.use_output_norm:
+            self.output_norm = LayerNorm(attention_dim)
+        self.utt_embed = utt_embed
+        self.language_embedding = torch.nn.Embedding(num_embeddings=lang_embs, embedding_dim=attention_dim)
+
         # self-attention module definition
         encoder_selfattn_layer = RelPositionMultiHeadedAttention
         encoder_selfattn_layer_args = (attention_heads, attention_dim, attention_dropout_rate, zero_triu)
@@ -68,42 +75,45 @@ class AdaInConformer(torch.nn.Module):
         convolution_layer = ConvolutionModule
         convolution_layer_args = (attention_dim, cnn_module_kernel, activation)
 
-        self.encoders = torch.nn.ModuleList([EncoderLayer(attention_dim, encoder_selfattn_layer(*encoder_selfattn_layer_args),
-                                                          positionwise_layer(*positionwise_layer_args),
-                                                          positionwise_layer(*positionwise_layer_args) if macaron_style else None,
-                                                          convolution_layer(*convolution_layer_args) if use_cnn_module else None, dropout_rate,
-                                                          normalize_before, concat_after) 
-                                            for _ in range(num_blocks)])
-        
-        self.feat_out = torch.nn.Linear(attention_dim, output_spectrogram_channels)
+        self.encoders = repeat(num_blocks, lambda lnum: EncoderLayer(attention_dim, encoder_selfattn_layer(*encoder_selfattn_layer_args),
+                                                                     positionwise_layer(*positionwise_layer_args),
+                                                                     positionwise_layer(*positionwise_layer_args) if macaron_style else None,
+                                                                     convolution_layer(*convolution_layer_args) if use_cnn_module else None, dropout_rate,
+                                                                     normalize_before, concat_after))
 
     def forward(self,
                 xs,
                 masks,
-                conds,
-                encoder_masks):
+                lang_ids=None):
         """
         Encode input sequence.
         Args:
+            utterance_embedding: embedding containing lots of conditioning signals
+            lang_ids: ids of the languages per sample in the batch
             xs (torch.Tensor): Input tensor (#batch, time, idim).
             masks (torch.Tensor): Mask tensor (#batch, time).
         Returns:
             torch.Tensor: Output tensor (#batch, time, attention_dim).
             torch.Tensor: Mask tensor (#batch, time).
         """
-        _,means,stds = conds
+
+        if self.embed is not None:
+            xs = self.embed(xs)
+
+        if lang_ids is not None:
+            lang_embs = self.language_embedding(lang_ids)
+            xs = xs + lang_embs  # offset phoneme representation by language specific offset
+
         xs = self.pos_enc(xs)
 
-        for block,mean,std in zip(self.encoders,means,stds):
-            y = self.layer_norm(xs[0])
-            y = self.inorm(y, encoder_masks)
-            y = y * std.unsqueeze(1) + mean.unsqueeze(1)
-            y = self.layer_norm(y)
-            xs, _ = block((y,xs[1]), masks)
-        
+        xs, _ = self.encoders(xs, masks)
         if isinstance(xs, tuple):
             xs = xs[0]
 
-        xs = self.feat_out(xs).view(xs.size(0), -1, self.output_spectrogram_channels)
+        if self.use_output_norm:
+            xs = self.output_norm(xs)
+
+        if self.utt_embed:
+            xs = self.inorm(xs.transpose(1, 2)).transpose(1, 2)
 
         return xs

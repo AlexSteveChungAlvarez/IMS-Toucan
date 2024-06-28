@@ -5,8 +5,7 @@ from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data.dataloader import DataLoader
-from torch.optim.swa_utils import AveragedModel, SWALR
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from Utility.WarmupScheduler import ToucanWarmupScheduler as WarmupScheduler
 from tqdm import tqdm
 
 from TrainingInterfaces.Spectrogram_to_Embedding.StyleEmbedding import StyleEmbedding
@@ -15,7 +14,10 @@ from Utility.path_to_transcript_dicts import *
 from Utility.utils import delete_old_checkpoints
 from Utility.utils import get_most_recent_checkpoint
 from Utility.utils import plot_progress_spec_unettts
-
+from run_weight_averaging import average_checkpoints
+from run_weight_averaging import get_n_recent_checkpoints_paths
+from run_weight_averaging import load_net_unet
+from run_weight_averaging import save_model_for_use
 
 def collate_and_pad(batch):
     # text, text_len, speech, speech_len, durations, language_id
@@ -40,8 +42,9 @@ def train_loop(net,
                path_to_embed_model,
                resume,
                fine_tune,
-               swa_start,
-               use_wandb
+               warmup_steps,
+               use_wandb,
+               postnet_start_steps
                ):
     """
     see train loop arbiter for explanations of the arguments
@@ -74,14 +77,12 @@ def train_loop(net,
                                         persistent_workers=True))
         train_iters.append(iter(train_loaders[-1]))
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
-    swa_model = AveragedModel(net)
-    scheduler = CosineAnnealingLR(optimizer, T_max=steps)
-    swa_scheduler = SWALR(optimizer, swa_lr=0.05)
+    scheduler = WarmupScheduler(optimizer, peak_lr=lr, warmup_steps=warmup_steps, max_steps=steps)
     grad_scaler = GradScaler()
     steps_run_previously = 0
     l1_losses_total = list()
-    l2_losses_total = list()
     duration_losses_total = list()
+    glow_losses_total = list()
 
     if resume:
         path_to_checkpoint = get_most_recent_checkpoint(checkpoint_dir=save_directory)
@@ -130,27 +131,30 @@ def train_loop(net,
             # step (i.e. iterations of inner loop = 1)
             style_embedding = style_embedding_function(batch_of_spectrograms=batch[2].to(device),
                                                        batch_of_spectrogram_lengths=batch[3].to(device))
-            l1_loss, l2_loss, duration_loss = net(
+            l1_loss, duration_loss, glow_loss = net(
                 text_tensors=text_tensors,
                 text_lengths=text_lengths,
                 gold_speech=gold_speech,
                 speech_lengths=speech_lengths,
                 gold_durations=gold_durations,
                 utterance_embedding=style_embedding,
-                lang_ids=lang_ids)
+                lang_ids=lang_ids,
+                return_mels=False,
+                run_glow=step_counter > postnet_start_steps)
 
             # then we directly update our meta-parameters without
             # the need for any task specific parameters
 
             if not torch.isnan(l1_loss):
                 train_loss = train_loss + l1_loss
-            if not torch.isnan(l2_loss):
-                train_loss = train_loss + l2_loss
             if not torch.isnan(duration_loss):
                 train_loss = train_loss + duration_loss
+            if glow_loss is not None:
+                if step_counter > postnet_start_steps and not torch.isnan(glow_loss):
+                    train_loss = train_loss + glow_loss
+                    glow_losses_total.append(glow_loss.item())
 
         l1_losses_total.append(l1_loss.item())
-        l2_losses_total.append(l2_loss.item())
         duration_losses_total.append(duration_loss.item())
 
         optimizer.zero_grad()
@@ -158,39 +162,24 @@ def train_loop(net,
         grad_scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0, error_if_nonfinite=False)
         grad_scaler.step(optimizer)
+        scale = grad_scaler.get_scale()
         grad_scaler.update()
-        if step_counter > swa_start:
-            swa_model.update_parameters(net)
-            swa_scheduler.step()
-        else:
+        skip_lr_sched = (scale > grad_scaler.get_scale())
+        if not skip_lr_sched:
             scheduler.step()
 
         if step_counter % steps_per_checkpoint == 0 and step_counter != 0:
             # ==============================
             # Enough steps for some insights
             # ==============================
-            if step_counter > swa_start:
-                torch.optim.swa_utils.update_bn(train_loaders, swa_model)
             net.eval()
             style_embedding_function.eval()
             default_embedding = style_embedding_function(
                 batch_of_spectrograms=datasets[0][0][2].unsqueeze(0).to(device),
                 batch_of_spectrogram_lengths=datasets[0][0][3].unsqueeze(0).to(device)).squeeze()
             print("Reconstruction Loss:    {}".format(round(sum(l1_losses_total) / len(l1_losses_total), 3)))
-            print("Content Encoder Loss:    {}".format(round(sum(l2_losses_total) / len(l2_losses_total), 3)))
             print("Steps:                  {}\n".format(step_counter))
-            if step_counter > swa_start:
-                torch.save({
-                    "model"       : swa_model.state_dict(),
-                    "optimizer"   : optimizer.state_dict(),
-                    "scaler"      : grad_scaler.state_dict(),
-                    "scheduler"   : swa_scheduler.state_dict(),
-                    "step_counter": step_counter,
-                    "default_emb" : default_embedding,
-                },
-                    os.path.join(save_directory, "best.pt".format(step_counter)))
-            else:
-                torch.save({
+            torch.save({
                     "model"       : net.state_dict(),
                     "optimizer"   : optimizer.state_dict(),
                     "scaler"      : grad_scaler.state_dict(),
@@ -204,27 +193,40 @@ def train_loop(net,
             if use_wandb:
                 wandb.log({
                     "l1_loss"      : round(sum(l1_losses_total) / len(l1_losses_total), 5),
-                    "l2_loss"      : round(sum(l2_losses_total) / len(l1_losses_total), 5),
                     "duration_loss": round(sum(duration_losses_total) / len(duration_losses_total), 5),
+                    "glow_loss"    : round(sum(glow_losses_total) / len(glow_losses_total), 3) if len(glow_losses_total) != 0 else None,
                 }, step=step_counter)
 
             try:
-                path_to_most_recent_plot = plot_progress_spec_unettts(net,
-                                                                      device,
-                                                                      save_directory,
-                                                                      step_counter,
-                                                                      datasets[0][0][2].to(device),
-                                                                      gold_durations,
-                                                                      lang,
-                                                                      default_embedding)
+                path_to_most_recent_plot_before, \
+                path_to_most_recent_plot_after = plot_progress_spec_unettts(net,
+                                                                            device,
+                                                                            save_directory,
+                                                                            step_counter,
+                                                                            datasets[0][0][2].to(device),
+                                                                            gold_durations,
+                                                                            lang,
+                                                                            default_embedding)
                 if use_wandb:
                     wandb.log({
-                        "progress_plot": wandb.Image(path_to_most_recent_plot)
+                        "progress_plot_before": wandb.Image(path_to_most_recent_plot_before)
                     }, step=step_counter)
+                    if step_counter > postnet_start_steps:
+                        wandb.log({
+                            "progress_plot_after": wandb.Image(path_to_most_recent_plot_after)
+                        }, step=step_counter)
             except IndexError:
                 print("generating progress plots failed.")
 
             l1_losses_total = list()
             l2_losses_total = list()
             duration_losses_total = list()
+            glow_losses_total = list()
+            if step_counter > 3 * postnet_start_steps:
+                # Run manual SWA (torch builtin doesn't work unfortunately due to the use of weight norm in the postflow)
+                checkpoint_paths = get_n_recent_checkpoints_paths(checkpoint_dir=save_directory, n=2)
+                averaged_model, default_embed = average_checkpoints(checkpoint_paths, load_func=load_net_unet)
+                save_model_for_use(model=averaged_model, default_embed=default_embed, name=os.path.join(save_directory, "best.pt"))
+                check_dict = torch.load(os.path.join(save_directory, "best.pt"), map_location=device)
+                net.load_state_dict(check_dict["model"])
             net.train()

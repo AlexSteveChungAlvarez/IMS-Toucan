@@ -166,8 +166,11 @@ def train_loop(net,
         grad_scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0, error_if_nonfinite=False)
         grad_scaler.step(optimizer)
+        scale = grad_scaler.get_scale()
         grad_scaler.update()
-        scheduler.step()
+        skip_lr_sched = (scale > grad_scaler.get_scale())
+        if not skip_lr_sched:
+            scheduler.step()
 
         if step_counter % steps_per_checkpoint == 0 and step_counter != 0:
             # ==============================

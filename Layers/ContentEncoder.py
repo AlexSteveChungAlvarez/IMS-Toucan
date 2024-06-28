@@ -30,9 +30,9 @@ class ContentEncoder(nn.Module):
                  encoder_normalize_before=True,
                  encoder_concat_after=False,
                  conformer_encoder_kernel_size=7,
-                 transformer_enc_dropout_rate=0.2,
-                 transformer_enc_positional_dropout_rate=0.2,
-                 transformer_enc_attn_dropout_rate=0.2,
+                 transformer_enc_dropout_rate=0.1,
+                 transformer_enc_positional_dropout_rate=0.1,
+                 transformer_enc_attn_dropout_rate=0.1,
                  
                  # duration predictor
                  duration_predictor_layers=3,

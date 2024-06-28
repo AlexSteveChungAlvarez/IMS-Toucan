@@ -382,56 +382,6 @@ def plot_progress_spec_unettts(net,
                                speech,
                                gold_durations,
                                lang,
-                               default_emb):
-    tf = ArticulatoryCombinedTextFrontend(language=lang)
-    sentence = tf.get_example_sentence(lang=lang)
-    if sentence is None:
-        return None
-    phoneme_vector = tf.string_to_tensor(sentence).squeeze(0).to(device)
-    spec_before, durations = net.inference(text=phoneme_vector,
-                                           speech = speech,
-                                           gold_durations = gold_durations,
-                                           utterance_embedding=default_emb,
-                                           lang_id=get_language_id(lang).to(device))
-    spec = spec_before.transpose(0, 1).to("cpu").numpy()
-    duration_splits, label_positions = cumsum_durations(durations.cpu().numpy())
-    os.makedirs(os.path.join(save_dir, "progress_spectrograms"), exist_ok=True)
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 6))
-    lbd.specshow(spec,
-                 ax=ax,
-                 sr=16000,
-                 cmap='GnBu',
-                 y_axis='mel',
-                 x_axis=None,
-                 hop_length=256)
-    ax.yaxis.set_visible(False)
-    ax.set_xticks(duration_splits, minor=True)
-    ax.xaxis.grid(True, which='minor')
-    ax.set_xticks(label_positions, minor=False)
-    phones = tf.get_phone_string(sentence, for_plot_labels=True)
-    ax.set_xticklabels(phones)
-    word_boundaries = list()
-    for label_index, word_boundary in enumerate(phones):
-        if word_boundary == "|":
-            word_boundaries.append(label_positions[label_index])
-    ax.vlines(x=duration_splits, colors="green", linestyles="dotted", ymin=0.0, ymax=8000, linewidth=1.0)
-    ax.vlines(x=word_boundaries, colors="orange", linestyles="dotted", ymin=0.0, ymax=8000, linewidth=1.0)
-    
-    ax.set_title(sentence)
-    plt.savefig(os.path.join(os.path.join(save_dir, "progress_spectrograms"), f"{step}.png"))
-    plt.clf()
-    plt.close()
-
-    return os.path.join(os.path.join(save_dir, "progress_spectrograms"), f"{step}.png")
-
-@torch.inference_mode()
-def plot_progress_spec_unettts2(net,
-                               device,
-                               save_dir,
-                               step,
-                               speech,
-                               gold_durations,
-                               lang,
                                default_emb,
                                run_postflow=True):
     tf = ArticulatoryCombinedTextFrontend(language=lang)
